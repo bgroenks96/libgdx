@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.jogamp.libgdx</groupId>
+  <artifactId>gdx-backend-jogamp</artifactId>
+  <version>1.9.1</version>
+  <packaging>jar</packaging>
+  <name>libGDX JogAmp Backend</name>
+  <description>Implementation of LibGDX backend provider that uses JogAmp JOGL/JOAL.</description>
+
+  <!-- license from parent project -->
+  <licenses>
+    <license>
+      <name>Apache Licence 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>gouessej</id>
+      <name>Julien Gouesse</name>
+      <email>gouessej@orange.fr</email>
+    </developer>
+    <developer>
+      <id>xranby</id>
+      <name>Xerxes Ranby</name>
+      <email>xerxes@zafena.se</email>
+    </developer>
+    <developer>
+      <id>bgroenks96</id>
+      <name>Brian Groenke</name>
+      <email>brian@forerunnergames.com</email>
+    </developer>
+  </developers>
+  
+  <properties>
+    <jogamp.version>2.3.2</jogamp.version>
+  </properties>
+  
+  <repositories>
+    <repository>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>central</id>
+      <name>Maven Central</name>
+      <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.badlogicgames.gdx</groupId>
+      <artifactId>gdx</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jogamp.joal</groupId>
+      <artifactId>joal-main</artifactId>
+      <version>${jogamp.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.badlogicgames.jlayer</groupId>
+      <artifactId>jlayer</artifactId>
+      <version>1.0.1-gdx</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.jcraft</groupId>
+        <artifactId>jorbis</artifactId>
+        <version>0.0.17</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jogamp.gluegen</groupId>
+      <artifactId>gluegen-rt-main</artifactId>
+      <version>${jogamp.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jogamp.jogl</groupId>
+      <artifactId>jogl-all-main</artifactId>
+      <version>${jogamp.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+	  <source>1.6</source>
+          <target>1.6</target>
+          <fork>true</fork>
+          <showWarnings>true</showWarnings>
+          <excludes>
+            <exclude>com/badlogic/gdx/backends/gwt/emu/java/lang/System.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5</version>
+        <configuration>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <useReleaseProfile>false</useReleaseProfile>
+          <releaseProfiles>release</releaseProfiles>
+          <goals>deploy</goals>
+          <mavenExecutorId>forked-path</mavenExecutorId>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.5</version>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.10</version>
+      </plugin>
+    </plugins>
+  </build>
+
+  <scm>
+    <connection>scm:git:git@github.com:gouessej/libgdx.git</connection>
+    <developerConnection>scm:git:git@github.com:bgroenks96/libgdx.git</developerConnection>
+    <url>git@github.com:gouessej/libgdx.git</url>
+  </scm>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+</project>
