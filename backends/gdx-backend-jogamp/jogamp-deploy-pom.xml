@@ -4,7 +4,7 @@
 
   <groupId>org.jogamp.libgdx</groupId>
   <artifactId>gdx-backend-jogamp</artifactId>
-  <version>1.9.3</version>
+  <version>1.9.4-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>libGDX JogAmp Backend</name>
   <url>https://github.com/gouessej/libgdx</url>
