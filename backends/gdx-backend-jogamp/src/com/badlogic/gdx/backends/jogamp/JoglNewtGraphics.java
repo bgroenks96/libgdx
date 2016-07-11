@@ -17,6 +17,9 @@
 package com.badlogic.gdx.backends.jogamp;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
@@ -33,17 +36,22 @@ import com.jogamp.newt.Screen;
 import com.jogamp.newt.Window;
 import com.jogamp.newt.event.WindowListener;
 import com.jogamp.newt.opengl.GLWindow;
+import com.jogamp.newt.util.EDTUtil;
 import com.jogamp.opengl.GLCapabilities;
 
 /** Implements the {@link Graphics} interface with Jogl.
  *
- * @author mzechner */
+ * @author mzechner 
+ * @author Brian Groenke
+ */
 public class JoglNewtGraphics extends JoglGraphicsBase {
 	/**
 	 * TODO move most of the code into a separate NEWT JoglGraphicsBase implementation and into a NEWT JoglApplicationConfiguration implementation,
 	 * implement getDesktopDisplayMode() and move getDisplayModes() into the latter
 	 */
 	final JoglNewtDisplayMode desktopMode;
+	
+	private final ExecutorService workerThread = createDaemonWorkerThread();
 
 	public JoglNewtGraphics (ApplicationListener listener, JoglNewtApplicationConfiguration config) {
 		initialize(listener, config);
@@ -94,7 +102,8 @@ public class JoglNewtGraphics extends JoglGraphicsBase {
 
 	@Override
 	public void destroy () {
-		getCanvas().setVisible(false);
+		setVisible(false);
+		workerThread.shutdown();
 		final Screen screen = getCanvas().getScreen();
 		super.destroy();
 		screen.removeReference();
@@ -207,15 +216,46 @@ public class JoglNewtGraphics extends JoglGraphicsBase {
 	}
 
 	@Override
-	public void setResizable(boolean resizable) {
-		getCanvas().setResizable(resizable);
-		this.config.resizable = resizable;
+	public void setResizable(final boolean resizable) {
+		final EDTUtil edtUtil = getCanvas().getScreen().getDisplay().getEDTUtil();
+		edtUtil.invoke(false, new Runnable() {
+			@Override
+			public void run () {
+				getCanvas().setResizable(resizable);
+				JoglNewtGraphics.this.config.resizable = resizable;
+			}
+		});
 	}
 
 	@Override
-	public void setUndecorated(boolean undecorated) {
-		getCanvas().setUndecorated(undecorated);
-		this.config.undecorated = undecorated;
+	public void setUndecorated(final boolean undecorated) {
+		final EDTUtil edtUtil = getCanvas().getScreen().getDisplay().getEDTUtil();
+		edtUtil.invoke(false, new Runnable() {
+			@Override
+			public void run () {
+				getCanvas().setUndecorated(undecorated);
+				JoglNewtGraphics.this.config.undecorated = undecorated;
+			}
+		});
+	}
+	
+	public void setVisible(final boolean visible) {
+		workerThread.execute(new Runnable() {
+			@Override
+			public void run () {
+				getCanvas().setVisible(visible);
+			}
+		});
+	}
+	
+	public void setFullscreen(final boolean fullscreen) {
+		workerThread.execute(new Runnable() {
+			@Override
+			public void run () {
+				getCanvas().setFullscreen(fullscreen);
+				JoglNewtGraphics.this.config.fullscreen = fullscreen;
+			}
+		});
 	}
 
 	public void setPosition(int x, int y) {
@@ -228,10 +268,6 @@ public class JoglNewtGraphics extends JoglGraphicsBase {
 
 	public void removeWindowListener(WindowListener listener) {
 		getCanvas().removeWindowListener(listener);
-	}
-
-	public void setVisible(boolean visible) {
-		getCanvas().setVisible(visible);
 	}
 
 	private int getMonitorWidth () {
@@ -279,6 +315,19 @@ public class JoglNewtGraphics extends JoglGraphicsBase {
 		getCanvas().windowRepaint(0, 0, width, height);
 
 		return true;
+	}
+	
+	private static ExecutorService createDaemonWorkerThread()
+	{
+		return Executors.newSingleThreadExecutor(new ThreadFactory() {
+			@Override
+			public Thread newThread (Runnable arg0) {
+				final Thread t = new Thread(arg0);
+				t.setName(JoglNewtGraphics.class + "-worker");
+				t.setDaemon(true);
+				return t;
+			}
+		});
 	}
 
 	protected static class JoglNewtDisplayMode extends DisplayMode {

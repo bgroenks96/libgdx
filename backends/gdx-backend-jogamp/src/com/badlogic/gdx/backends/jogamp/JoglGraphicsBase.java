@@ -38,6 +38,8 @@ import com.jogamp.opengl.util.Animator;
 public abstract class JoglGraphicsBase implements Graphics, GLEventListener {
 	static GLVersion glVersion;
 	static int major, minor;
+	
+	private final Object mutex = new Object();
 
 	ApplicationListener listener = null;
 	boolean created = false;
@@ -116,7 +118,7 @@ public abstract class JoglGraphicsBase implements Graphics, GLEventListener {
 
 	void pause () {
 		cancelRendering = true;
-		synchronized (this) {
+		synchronized (mutex) {
 			paused = true;
 		}
 		// stop here if not yet fully initialized
@@ -152,7 +154,7 @@ public abstract class JoglGraphicsBase implements Graphics, GLEventListener {
 
 		if (!created) {
 			listener.create();
-			synchronized (this) {
+			synchronized (mutex) {
 				paused = false;
 			}
 			created = true;
@@ -166,17 +168,21 @@ public abstract class JoglGraphicsBase implements Graphics, GLEventListener {
 
 	@Override
 	public void display (GLAutoDrawable arg0) {
-		synchronized (this) {
-			if (!paused) {
-				final boolean shouldRender = ((JoglApplicationBase)Gdx.app).executeRunnables() | shouldRender();
-				if (shouldRender && !cancelRendering) {
-					updateTime();
-					((JoglInput) (Gdx.input)).processEvents();
-					frameId++;
-					listener.render();
-					if (Gdx.audio != null) {
-					    ((OpenALAudio) Gdx.audio).update();
-					}
+		final boolean paused, cancelRendering;
+		synchronized (mutex) {
+			paused = this.paused;
+			cancelRendering = this.cancelRendering;
+		}
+
+		if (!paused) {
+			final boolean shouldRender = ((JoglApplicationBase)Gdx.app).executeRunnables() | shouldRender();
+			if (shouldRender && !cancelRendering) {
+				updateTime();
+				((JoglInput)(Gdx.input)).processEvents();
+				frameId++;
+				listener.render();
+				if (Gdx.audio != null) {
+					((OpenALAudio)Gdx.audio).update();
 				}
 			}
 		}
@@ -187,7 +193,7 @@ public abstract class JoglGraphicsBase implements Graphics, GLEventListener {
 		    canvas.getContext().makeCurrent();
 		}
 
-		pause();
+		animator.stop();
 		// prevent animator from touching the dying drawable context
 		animator.remove(canvas);
 		disposed = true;
@@ -227,13 +233,13 @@ public abstract class JoglGraphicsBase implements Graphics, GLEventListener {
 
 	@Override
 	public void requestRendering () {
-		synchronized (this) {
+		synchronized (mutex) {
 			requestRendering = true;
 		}
 	}
 
 	public boolean shouldRender () {
-		synchronized (this) {
+		synchronized (mutex) {
 			boolean rq = requestRendering;
 			requestRendering = false;
 			return rq || isContinuous /*|| isDirty()*/;
