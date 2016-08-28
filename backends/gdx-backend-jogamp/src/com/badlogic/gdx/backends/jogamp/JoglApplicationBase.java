@@ -17,6 +17,7 @@ package com.badlogic.gdx.backends.jogamp;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.ApplicationLogger;
 import com.badlogic.gdx.Audio;
 import com.badlogic.gdx.Files;
 import com.badlogic.gdx.Gdx;
@@ -40,6 +41,7 @@ public abstract class JoglApplicationBase implements Application {
 	protected final Array<Runnable> executedRunnables = new Array<Runnable>();
 	int logLevel = LOG_INFO;
 	protected ApplicationListener listener;
+	protected ApplicationLogger logger;
 	protected final Array<LifecycleListener> lifecycleListeners = new Array<LifecycleListener>();
 	private Thread shutdownHook;
 
@@ -271,12 +273,27 @@ public abstract class JoglApplicationBase implements Application {
 		if (logLevel >= LOG_INFO) {
 			System.out.println(tag + ": " + message);
 			exception.printStackTrace(System.out);
+			
+			if (this.logger != null)
+			{
+				this.logger.error(tag, message);
+				this.logger.error(tag, exception.toString());
+			}
 		}
-
 	}
 
 	@Override
 	public int getLogLevel() {
 		return logLevel;
+	}
+	
+	@Override
+	public void setApplicationLogger (ApplicationLogger applicationLogger) {
+		this.logger = applicationLogger;
+	}
+
+	@Override
+	public ApplicationLogger getApplicationLogger () {
+		return this.logger;
 	}
 }
